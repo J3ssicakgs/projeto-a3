@@ -1,0 +1,14 @@
+# configuração que se tem para iniciar a configuração
+spring:
+  application:
+    name: 'funcionario'
+# busca dentro da spring a aplicação chamada funcionario
+  profiles:
+    active: 'h2'
+
+  cloud:
+    config:
+      uri: http://localhost:7070
+      #spring.jpa.defer-datasource-initializantion: true
+      
+# o bootstrap é a configuração que vai ter para iniciar ou antes a aplicação

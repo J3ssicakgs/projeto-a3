@@ -1,0 +1,112 @@
+package aula.agenda.msagenda.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+
+import aula.agenda.msagenda.dto.AgendaDTO;
+import aula.agenda.msagenda.dto.DadosFuncionarioDTO;
+import aula.agenda.msagenda.dto.DadosSalaDTO;
+import aula.agenda.msagenda.dto.InfoAgendaDTO;
+import aula.agenda.msagenda.model.Agenda;
+import aula.agenda.msagenda.repository.AgendaRepository;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Service
+public class AgendaService {
+
+	private static final String HTTP_FUNCIONARIO_FUNCIONARIO_NOME = "http://funcionario/funcionario/nome/";
+    private static final String HTTP_SALA_SALA = "http://sala/sala/";
+    private static final String HTTP_FUNCIONARIO_FUNCIONARIO = "http://funcionario/funcionario/";
+	@Autowired
+	private AgendaRepository agendaRepository;
+	
+	@Autowired
+	private RestTemplate restTemplate; //classe do springboot que permite chamar endpoints de outros serviços
+	
+	public void registrarAgenda(AgendaDTO dto) {
+		DadosFuncionarioDTO funcionarioDTO = consumirFuncionario(dto);
+		List<DadosSalaDTO> listaSalasDTO = consumirSalas(dto);
+		
+		Agenda agenda = new Agenda();
+		agenda.setNome(dto.getNomeAgenda);
+		agenda.setResponsavel(funcionarioDTO.getId());
+		Set<Long> reservas = new HashSet<>();
+		for (DadosSalaDTO salaDTO : listaSalasDTO) {
+			reservas.add(salaDTO.getId());
+		}
+		agenda.setDataHoraReserva(reservas);
+		agendaRepository.save(agenda);
+	}
+	
+	private DadosFuncionarioDTO consumirFuncionario(AgendaDTO dto) {
+		ResponseEntity<DadosFuncionarioDTO> exchange =
+				restTemplate.exchange(HTTP_FUNCIONARIO_FUNCIONARIO_NOME + dto.getResponsavel(),
+						HttpMethod.GET, null, DadosFuncionarioDTO.class);
+		DadosFuncionarioDTO funcionarioDTO = exchange.getBody();
+		return funcionarioDTO;
+	}
+	
+	private List<DadosSalaDTO> consumirSalas(AgendaDTO dto){
+		List<DadosSalaDTO> salaDTOList = new ArrayList<>();
+		for (int i = 0; i < dto.getIdSala().size(); i++) {
+			DadosSalaDTO salaDTO = new DadosSalaDTO(dto.getIdSala().get(i));
+			salaDTOList.add(salaDTO);
+		}
+		return getEndPointSalasPost(salaDTOList, "nome");		
+	}
+	private List<DadosSalaDTO> getEndPointSalasPost(List<DadosSalaDTO> salaDTOList, String destino) {
+		HttpHeaders httpHeaders = new HttpHeaders();
+		httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<List<DadosSalaDTO>> dadosAlunoDTOHttpEntity =
+                new HttpEntity<>(salaDTOList, httpHeaders);
+		ResponseEntity<DadosSalaDTO[]> exchange =
+                restTemplate.exchange(HTTP_SALA_SALA + destino, HttpMethod.POST,
+                        dadosSalaDTOHttpEntity, DadosSalaDTO[].class);
+        List<DadosSalaDTO> listaSalasDTO = new ArrayList<>(Arrays.asList(exchange.getBody()));
+        return listaSalasDTO;
+	}
+	public List<InfoAgendaDTO> listarTodas(){
+		List<Agenda> agendaList = agendaRepository.findAll();
+		List<InfoAgendaDTO> infoAgendaDTOS = new ArrayList<>();
+		for (Agenda agenda : agendaList) {
+			InfoAgendaDTO dto = new InfoAgendaDTO();
+			dto.setId(agenda.getId());
+			dto.setAgenda(agenda.getDataHoraReserva());
+			dto.setNomeFuncionario(buscarNomeFuncionario(agenda.getResponsavel()));
+			List<DadosSalaDTO> dadosSalaDTOS = buscarNomesSalas(agenda.getSala());
+			List<String> nomesSalas = new ArrayList<>();
+			for (int i = 0; i < dadosSalaDTOS.size(); i++) {
+				nomesSalas.add(dadosSalaDTOS.get(i).getNome());
+			}
+			dto.setNomesSala(nomesSalas);
+			infoAgendaDTOS.add(dto);
+		}
+		return infoAgendaDTOS;
+	}
+	private List<DadosSalaDTO> buscarNomesSalas(Set<Long> salasID){
+		List<DadosSalaDTO> salaDTOList = new ArrayList<>();
+		for (Long salas : salasID) {
+			DadosSalaDTO salaDTO = new DadosSalaDTO(salas);
+			salaDTOList.add(salaDTO);
+		}
+		return getEndPointSalasPost(salaDTOList, "ids");
+	}
+	
+	private String buscarNomeFuncionario (Long funcionarioID) {
+		ResponseEntity<DadosFuncionarioDTO> exchange =
+				restTemplate.exchange(HTTP_FUNCIONARIO_FUNCIONARIO + funcionarioID,
+						HttpMethod.GET, null, DadosFuncionarioDTO.class);
+		DadosFuncionarioDTO funcionarioDTO = exchange.getBody();
+		return funcionarioDTO.getNome();
+		}
+}
+

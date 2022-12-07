@@ -1,0 +1,6 @@
+{ 	
+    "nome":"Ana Luiza",
+    "data_admissao" : "02/01/2022",
+    "data_nascimento":"27/04/2003",
+    "tipo_profissao": ["Professora"]
+}

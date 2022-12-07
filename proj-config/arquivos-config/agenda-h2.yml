@@ -1,0 +1,31 @@
+# datasource
+#spring:
+ # datasource:
+   # driverClassName: com.mysql.cj.jdbc.Driver
+   # url: jdbc:mysql://localhost:3306/java_spring?useTimezone=true&serverTimezone=UTC
+   # username: root
+   # password: Ana2704Luiza.
+    
+spring:
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:file:./data/ms-agenda
+    username: sa
+    password:    
+    
+  # jpa
+ # jpa:
+  #  database-platform: org.hibernate.dialect.MySQL5Dialect
+   # hibernate:
+    #  ddl-auto: update
+     # spring.jpa.defer-datasource-initializantion: true
+      
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update   
+  # h2
+  h2:
+    console:
+      enabled: true
+      path: /h2-console

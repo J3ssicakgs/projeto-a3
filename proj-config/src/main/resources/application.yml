@@ -1,0 +1,11 @@
+server:
+  port: 7070
+
+spring:
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: C:/Users/CCI/Downloads/proj-agenda-micro-services-master/proj-config/arquivos-config

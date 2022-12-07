@@ -1,0 +1,9 @@
+server:
+  port: 8761 
+  #porta padrao do eureka
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    fetch-registry: false
+    register-with-eureka: false
